@@ -1382,3 +1382,45 @@ var jobMapFun=function(){
 };
 
 第一组:{"key":"女":"name":["张三","李四","王五"]}
+
+@编写reduce操作
+var jobReduceFun=function(key,values){
+	return {"sex":key,"names":values};
+}
+
+db.runCommand({
+	"mapreduce":"emps",
+	"map":jobMapFun,
+	"reduce":jobReduceFun,
+	"out":"t_tmp_emps" //指定输出结果表
+});
+
+	console==>
+	{
+		"result" : "t_tmp_emps",	//输出结果表
+		"timeMillis" : 86,
+		"counts" : {
+			"input" : 6,
+			"emit" : 6,
+			"reduce" : 2,
+			"output" : 2
+		},
+		"ok" : 1
+	}
+
+
+@现在我们开看一下t_tmp_emps的内容
+[console]> db.t_tmp_emps.find()
+	console==>
+	{ "_id" : "女", "value" : { "sex" : "女", "names" : [ "张三", "李四", "王五" ] } }
+	{ "_id" : "男", "value" : { "sex" : "男", "names" : [ "赵四", "刘能", "广坤" ] } }
+
+
+//我们还可以对数据进行处理
+var jobFinalizeFn=function(key,val){
+	if(key=="女"){
+		return {"sex":key,"names":val,"info":"这是位女同志"};
+	}
+};
+
+
