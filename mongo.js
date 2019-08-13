@@ -1294,16 +1294,91 @@ while(cursor.hasNext()){
 		"upserted" : [ ]
 	})
 
+//distinct必须在runCommand中执行,并且必须指定集合以及去重的列
+[console]> db.runCommand({"distinct":"oneprice","key":"sex"});
+	console==>
+	{ "values" : [ "男", "女" ], "ok" : 1 }
+	//感觉意义不大
 
 
 
 
+group操作,使用group可以实现数据的分组,在mongo中会将集合中的不同的key进行分组.并产生一个处理结果
+@查询"class"="A"的信息,并且安装"sex"分组
+[console]> db.runCommand(
+	{"group":
+		{
+			"ns":"oneprice", 							//集合操作
+			"key":{"sex":true}, 						//分组的键
+			"initial":{"count":0},				//初始化数量
+			"condition":{"class":"A"},			//条件
+			"$reduce":function(doc,prev){	//聚合表达式
+				print(doc,prev);
+			}
+		}
+	}
+);
+
+	console==>
+	{
+		"retval" : [
+			{
+				"sex" : "男",
+				"count" : 0
+			},
+			{
+				"sex" : "女",
+				"count" : 0
+			}
+		],
+		"count" : NumberLong(4),
+		"keys" : NumberLong(2),
+		"ok" : 1
+	}
 
 
+[console]> db.runCommand(
+	{"group":
+		{
+			"ns":"oneprice", 							
+			"key":{"sex":true}, 						
+			"initial":{"count":0},				
+			"condition":{"class":"A"},			
+			"$reduce":function(doc,prev){	
+				prev.count++;
+			}
+		}
+	}
+);
+
+//这个东西是底层的,所以不会用这个东西写
 
 
+#MapReduce
+/**大数据的核心,实际上别用这个东西*/
+/**
+	Map:将数据取出,
+	Reduce:负责数据的最后的处理
+	但是在MongoDB中实现MapReduce的话,成本太高了.
+*/
 
+//重新插入数据
+[console]> db.emps.insert([
+	{"name":"张三","age":30,"sex":"女","desc":"路人已",},
+	{"name":"李四","age":31,"sex":"女","desc":"路人甲"},
+	{"name":"王五","age":29,"sex":"女","desc":"路人丙"},
+	{"name":"赵四","age":50,"sex":"男","desc":"气质这一块,把握的是死死的"},
+	{"name":"刘能","age":52,"sex":"男","desc":"广坤,赵四都不如我"},
+	{"name":"广坤","age":51,"sex":"男","desc":"超越陈坤,杨坤,蔡徐坤"},
+]);
 
+	console==>
+	...
 
+@按照"sex"进行分组,取得每个性别的人名
+//1.编写分组的定义
+var jobMapFun=function(){
+	emit(this.sex,this.name); //按照sex分组,取出name
+};
 
-
+第一组:{"key":"女":"name":["张三","李四","王五"]}
