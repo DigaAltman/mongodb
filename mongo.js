@@ -1781,14 +1781,76 @@ $project
 
 	
 
+//除了四则运算还有关系运算.大于($cmp),等于($eq),大于($gt),大于等于($gte),小于($lt),
+//	不等于($ne),判断NULL.这些返回的结果都是boolean
+	
+//还有($or,$and,$not)
+//$concat,$substr,$toLower,
+
+@查询出年龄大于50岁以上的人的
+[console]> db.emps.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"name":1,
+				"sex":1,
+				"age":1,
+				"result":{
+					"$gte":["$age",50]
+				}
+			}
+		}
+	]);
+
+	console==>
+	{ "name" : "张三", "age" : 30, "sex" : "女", "result" : false }
+	{ "name" : "李四", "age" : 31, "sex" : "女", "result" : false }
+	{ "name" : "王五", "age" : 29, "sex" : "女", "result" : false }
+	{ "name" : "赵四", "age" : 50, "sex" : "男", "result" : true }
+	{ "name" : "刘能", "age" : 52, "sex" : "男", "result" : true }
+	{ "name" : "广坤", "age" : 51, "sex" : "男", "result" : true }
 
 
 
 
 
+$sort
+//使用"$sort"可以实现,1表示升学,-1表示降序
+@对指定字段进行排序
+	//之前的数据
+	{"name":"张三","age":30,"sex":"女","desc":"路人已"}
+	{"name":"李四","age":31,"sex":"女","desc":"路人甲"}
+	{"name":"王五","age":29,"sex":"女","desc":"路人丙"}
+	{"name":"赵四","age":50,"sex":"男","desc":"气质这一块,把握的是死死的"}
+	{"name":"刘能","age":52,"sex":"男","desc":"广坤,赵四都不如我"}
+	{"name":"广坤","age":51,"sex":"男","desc":"超越陈坤,杨坤,蔡徐坤"}
+
+[console]> db.emps.aggregate([
+		{
+			"$sort":{
+				"age":-1
+			}
+		}
+	]);
+
+	console==>
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326b"), "name" : "刘能", "age" : 52, "sex" : "男", "desc" : "广坤,赵四都不如我" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326c"), "name" : "广坤", "age" : 51, "sex" : "男", "desc" : "超越陈坤,杨坤,蔡徐坤" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326a"), "name" : "赵四", "age" : 50, "sex" : "男", "desc" : "气质这一块,把握的是死死的" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3268"), "name" : "李四", "age" : 31, "sex" : "女", "desc" : "路人甲" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3267"), "name" : "张三", "age" : 30, "sex" : "女", "desc" : "路人已" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3269"), "name" : "王五", "age" : 29, "sex" : "女", "desc" : "路人丙" }
+
+	
 
 
 
+//分页处理
+"$limit"
+	负责数据的取出个数
+
+"$skip"
+	数据的跨过个数
 
 
 
