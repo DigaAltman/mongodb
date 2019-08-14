@@ -1421,6 +1421,267 @@ var jobFinalizeFn=function(key,val){
 	if(key=="女"){
 		return {"sex":key,"names":val,"info":"这是位女同志"};
 	}
+	return {"sex":key,"names":val};
 };
+
+
+@现在继续重新聚合
+db.runCommand({
+	"mapreduce":"emps",
+	"map":jobMapFun,
+	"reduce":jobReduceFun,
+	"out":"out_job_emp",
+	"finalize":jobFinalizeFn
+});
+
+	console==>
+	{
+		"result" : "out_job_emp",
+		"timeMillis" : 58,
+		"counts" : {
+			"input" : 6,
+			"emit" : 6,
+			"reduce" : 2,
+			"output" : 2
+		},
+		"ok" : 1
+	}
+
+
+
+@查看结果表
+[console]> db.out_job_emp.find()
+	console==>
+	{ "_id" : "女", "value" : { "sex" : "女", "names" : { "sex" : "女", "names" : [ "张三", "李四", "王五" ] }, "info" : "这是位女同志" } }
+	{ "_id" : "男", "value" : { "sex" : "男", "names" : { "sex" : "男", "names" : [ "赵四", "刘能", "广坤" ] } } }
+
+
+
+@统计出各个性别的人数,平均年龄,最大年龄
+	{"name":"张三","age":30,"sex":"女","desc":"路人已"}
+	{"name":"李四","age":31,"sex":"女","desc":"路人甲"}
+	{"name":"王五","age":29,"sex":"女","desc":"路人丙"}
+	{"name":"赵四","age":50,"sex":"男","desc":"气质这一块,把握的是死死的"}
+	{"name":"刘能","age":52,"sex":"男","desc":"广坤,赵四都不如我"}
+	{"name":"广坤","age":51,"sex":"男","desc":"超越陈坤,杨坤,蔡徐坤"}
+
+//Map
+var sexMapFun=function(){
+	//分组条件,一个每个集合取出的内容
+	emit(this.sex,{"count":1,"avg":this.age,"max":this.age});
+};
+
+//Reduce
+var sexReduceFun=function(key,vals){
+	var total=0; //统计
+	var sum=0;     //计算平均年龄
+	var max=vals[0].max;
+	for(var x in vals){
+		total+=vals[x].count; //人数增加
+		
+		sum+=vals[x].avg;  //累加
+
+		//获取最大值
+		if(vals[x].max>max){
+			max=vals[x].max;
+		}       
+	}
+	sum=sum/total; //求平均值
+	return {"count":total,"avg":sum,"max":max}; //返回最终结果
+};
+
+//Commit
+db.runCommand({
+	"mapreduce":"emps",
+	"map":sexMapFun,
+	"reduce":sexReduceFun,
+	"out":"t_sex_emp"
+});
+
+	console==>
+	{
+		"result" : "t_sex_emp",
+		"timeMillis" : 50,
+		"counts" : {
+			"input" : 6,
+			"emit" : 6,
+			"reduce" : 2,
+			"output" : 2
+		},
+		"ok" : 1
+	}
+
+
+@查看运行结果
+[console]> db.t_sex_emp.find();
+	{ "_id" : "女", "value" : { "count" : 3, "avg" : 30, "max" : 31 } }
+	{ "_id" : "男", "value" : { "count" : 3, "avg" : 51, "max" : 52 } }
+
+
+
+
+
+
+
+
+*******************
+***    聚合框架     ***
+*******************
+
+group
+//MongoDB2之后提供的聚合函数.group(分组的数据操作)
+
+@根据性别进行分组,然后求人的总共数量
+//之前的数据
+	{"name":"张三","age":30,"sex":"女","desc":"路人已"}
+	{"name":"李四","age":31,"sex":"女","desc":"路人甲"}
+	{"name":"王五","age":29,"sex":"女","desc":"路人丙"}
+	{"name":"赵四","age":50,"sex":"男","desc":"气质这一块,把握的是死死的"}
+	{"name":"刘能","age":52,"sex":"男","desc":"广坤,赵四都不如我"}
+	{"name":"广坤","age":51,"sex":"男","desc":"超越陈坤,杨坤,蔡徐坤"}
+
+[console]>db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex", //按照sex进行分组
+				"count":{
+					"$sum":1		//统计人数,这个地方其实是累加计数
+				}
+			}
+		}
+	]);
+
+	console==>
+	{ "_id" : "男", "count" : 3 }
+	{ "_id" : "女", "count" : 3 }
+
+
+
+@根据性别进行分组,然后对年龄进行求和
+[console]>db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"count":{
+					"$sum":"$age"
+				}
+			}
+		}
+	]);
+
+	console==>
+	{ "_id" : "男", "count" : 153 }
+	{ "_id" : "女", "count" : 90 }
+
+
+
+@计算出性别的平均年龄
+[console]> db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"count":{
+					"$avg":"$age"
+				}
+			}
+		}
+	]);
+	
+	console==>
+	{ "_id" : "男", "count" : 153 }
+	{ "_id" : "女", "count" : 90 }
+
+
+	{"name":"张三","age":30,"sex":"女","desc":"路人已"}
+	{"name":"李四","age":31,"sex":"女","desc":"路人甲"}
+	{"name":"王五","age":29,"sex":"女","desc":"路人丙"}
+	{"name":"赵四","age":50,"sex":"男","desc":"气质这一块,把握的是死死的"}
+	{"name":"刘能","age":52,"sex":"男","desc":"广坤,赵四都不如我"}
+	{"name":"广坤","age":51,"sex":"男","desc":"超越陈坤,杨坤,蔡徐坤"}
+
+@求最高和最低年龄
+[console]> db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"max_age":{"$max":"$age"},
+				"min_age":{"$min":"$age"}
+			}
+		}
+	]);
+
+	console==>
+	{ "_id" : "男", "max_age" : 52, "min_age" : 50 }
+	{ "_id" : "女", "max_age" : 31, "min_age" : 29 }
+
+
+
+@统计每个性别的人名
+[console]> db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"result":{
+					"$push":"$name"
+				}
+			}
+		}
+	]);
+	
+	console==>
+	{ "_id" : "男", "result" : [ "赵四", "刘能", "广坤" ] }
+	{ "_id" : "女", "result" : [ "张三", "李四", "王五" ] }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
