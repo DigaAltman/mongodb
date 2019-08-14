@@ -1528,7 +1528,7 @@ db.runCommand({
 ***    聚合框架     ***
 *******************
 
-group
+$group
 //MongoDB2之后提供的聚合函数.group(分组的数据操作)
 
 @根据性别进行分组,然后求人的总共数量
@@ -1634,28 +1634,152 @@ group
 
 
 
+@在上面的基础上,只保存第一个内容
+[console]> db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"result":{
+					"$first":"$name"
+				}
+			}
+		}
+	]);            
+
+	console==>
+	{ "_id" : "男", "result" : "赵四" }
+	{ "_id" : "女", "result" : "张三" }
+
+@在上上面的基础上,只保留最后一个内容
+[console]> db.emps.aggregate([
+		{
+			"$group":{
+				"_id":"$sex",
+				"result":{
+					"$last":"$name"
+				}
+			}
+		}
+	]);            
+
+	console==>
+	{ "_id" : "男", "result" : "广坤" }
+	{ "_id" : "女", "result" : "王五" }
 
 
 
 
 
 
+$project
+//可以利用"$project"来控制数据列的显示规则,那么可以执行的规则如下:
+	|--- 普通列: 
+		({成员:1|true})  表示需要显示的内容
+
+	|--- _id 列:
+		({"_id":0|false}) 表示"_Id"列是否显示
+
+	|-- 条件过滤列:
+		({成员:表达式})	满足表达式之后的数据是否可以进行显示.
+
+@只显示"name"列,不显示"_id"列
+//之前的数据:
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3267"), "name" : "张三", "age" : 30, "sex" : "女", "desc" : "路人已" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3268"), "name" : "李四", "age" : 31, "sex" : "女", "desc" : "路人甲" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3269"), "name" : "王五", "age" : 29, "sex" : "女", "desc" : "路人丙" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326a"), "name" : "赵四", "age" : 50, "sex" : "男", "desc" : "气质这一块,把握的是死死的" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326b"), "name" : "刘能", "age" : 52, "sex" : "男", "desc" : "广坤,赵四都不如我" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326c"), "name" : "广坤", "age" : 51, "sex" : "男", "desc" : "超越陈坤,杨坤,蔡徐坤" }
+
+
+[console]> db.emps.aggregate([
+	{
+		"$project":{
+			"_id":0,
+			"name":1
+		}
+	}
+]);
+
+	console==>
+	{ "name" : "张三" }
+	{ "name" : "李四" }
+	{ "name" : "王五" }
+	{ "name" : "赵四" }
+	{ "name" : "刘能" }
+	{ "name" : "广坤" }
 
 
 
 
+//可以在投影列中做四则运算($add),($substract),(乘:$multiply),(除:$divide),(余:$mod)
+[console]> db.emps.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"name":1,
+				"age":1,
+				"sex":1
+			}
+		}
+	]);
+
+	console==>
+	{ "name" : "张三", "age" : 30, "sex" : "女" }
+	{ "name" : "李四", "age" : 31, "sex" : "女" }
+	{ "name" : "王五", "age" : 29, "sex" : "女" }
+	{ "name" : "赵四", "age" : 50, "sex" : "男" }
+	{ "name" : "刘能", "age" : 52, "sex" : "男" }
+	{ "name" : "广坤", "age" : 51, "sex" : "男" }
+
+
+//带别名输出
+[console]> db.emps.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"name":1,
+				"age":1,
+				"性别":"$sex"
+			}
+		}
+	]);
+	
+	console==>
+	{ "name" : "张三", "age" : 30, "性别" : "女" }
+	{ "name" : "李四", "age" : 31, "性别" : "女" }
+	{ "name" : "王五", "age" : 29, "性别" : "女" }
+	{ "name" : "赵四", "age" : 50, "性别" : "男" }
+	{ "name" : "刘能", "age" : 52, "性别" : "男" }
+	{ "name" : "广坤", "age" : 51, "性别" : "男" }
 
 
 
+@求100年以后的人的年龄
+[console]> db.emps.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"name":1,
+				"年龄+100":{
+					"age":{
+						"$add":["$age",100]
+					}
+				},
+				"sex":"$sex"
+			}
+		}
+	]);
 
+	console==>
+	{ "name" : "张三", "年龄+100" : { "age" : 130 }, "sex" : "女" }
+	{ "name" : "李四", "年龄+100" : { "age" : 131 }, "sex" : "女" }
+	{ "name" : "王五", "年龄+100" : { "age" : 129 }, "sex" : "女" }
+	{ "name" : "赵四", "年龄+100" : { "age" : 150 }, "sex" : "男" }
+	{ "name" : "刘能", "年龄+100" : { "age" : 152 }, "sex" : "男" }
+	{ "name" : "广坤", "年龄+100" : { "age" : 151 }, "sex" : "男" }
 
-
-
-
-
-
-
-
+	
 
 
 
