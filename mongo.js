@@ -1844,6 +1844,14 @@ $sort
 	
 
 
+//之前的数据
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f3267"), "name" : "张三", "age" : 30, "sex" : "女", "desc" : "路人已" }
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f3268"), "name" : "李四", "age" : 31, "sex" : "女", "desc" : "路人甲" }
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f3269"), "name" : "王五", "age" : 29, "sex" : "女", "desc" : "路人丙" }
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f326a"), "name" : "赵四", "age" : 50, "sex" : "男", "desc" : "气质这一块,把握的是死死的" }
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f326b"), "name" : "刘能", "age" : 52, "sex" : "男", "desc" : "广坤,赵四都不如我" }
+{ "_id" : ObjectId("5d5204e7d3e99828bf5f326c"), "name" : "广坤", "age" : 51, "sex" : "男", "desc" : "超越陈坤,杨坤,蔡徐坤" }
+
 
 //分页处理
 "$limit"
@@ -1851,6 +1859,113 @@ $sort
 
 "$skip"
 	数据的跨过个数
+//2个1页,取第2页
+[console]> db.emps.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"name":1,
+				"age":1,
+				"desc":1
+			}
+		},
+		{"$skip":2},
+		{"$limit":2}	
+	]);
+	
+	console==>
+	{ "name" : "王五", "age" : 29, "desc" : "路人丙" }
+	{ "name" : "赵四", "age" : 50, "desc" : "气质这一块,把握的是死死的" }
+
+
+
+$unwind
+//查询数据时返回的数组信息不方便浏览,所以使用这个可以将数组转换为字符串.
+@插入新数据
+[console]> db.depts.insert([
+		{"title":"技术","bus":["研发","生产","培训"]},
+		{"title":"财务","bus":["工资","税收"]}
+	]);
+	
+	console==>
+	BulkWriteResult({
+		"writeErrors" : [ ],
+		"writeConcernErrors" : [ ],
+		"nInserted" : 2,
+		"nUpserted" : 0,
+		"nMatched" : 0,
+		"nModified" : 0,
+		"nRemoved" : 0,
+		"upserted" : [ ]
+	})
+
+
+@使用$unwind
+[console]> db.depts.aggregate([
+		{
+			"$project":{
+				"_id":0,
+				"title":true,
+				"bus":true
+			}
+		},
+		{"$unwind":"$bus"}
+	]);
+	
+	console==>
+	{ "title" : "技术", "bus" : "研发" }
+	{ "title" : "技术", "bus" : "生产" }
+	{ "title" : "技术", "bus" : "培训" }
+	{ "title" : "财务", "bus" : "工资" }
+	{ "title" : "财务", "bus" : "税收" }
+
+
+
+
+
+$geoNear
+//使用geoNear可以获取附近的坐标点
+@插入新数据
+[console]> db.shops.insert([
+		{"loc":[10,20]},
+		{"loc":[20,30]},
+		{"loc":[20,10]},
+		{"loc":[30,20]},
+		{"loc":[40,30]},
+		{"loc":[30,40]},
+		{"loc":[10,40]},
+		{"loc":[40,10]}
+	]);
+	
+	console==>
+	...
+
+
+db.shops
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
