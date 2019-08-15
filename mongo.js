@@ -1941,21 +1941,74 @@ $geoNear
 	...
 
 
-db.shops
+@获取距离[11,12]最近的点
+//首先开启索引
+[console]> db.shops.ensureIndex({"loc":"2d"});
+	console==>
+	{
+		"createdCollectionAutomatically" : false,
+		"numIndexesBefore" : 1,
+		"numIndexesAfter" : 2,
+		"ok" : 1
+	}
+
+
+[console]> db.shops.aggregate([
+		{
+			"$geoNear":{
+				"near":[11,12],
+				"distanceField":"loc",
+				"maxDistance":1,				//最大距离
+				"num":2,								//返回数据
+				"spherical":true 
+			}
+		}
+	]);
 	
+	console==>
+	{ "_id" : ObjectId("5d54aa66bac1d07722ccedd8"), "loc" : 0.140628651845969 }
+	{ "_id" : ObjectId("5d54aa66bac1d07722ccedda"), "loc" : 0.15808122674149488 }
 
 
 
 
+$out
+//利用此操作可以将查询结果输出到指定的集合里面
+@将投影出来的结果输出到集合中
+[console]> db.emps.find();
+	console==>
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3267"), "name" : "张三", "age" : 30, "sex" : "女", "desc" : "路人已" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3268"), "name" : "李四", "age" : 31, "sex" : "女", "desc" : "路人甲" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f3269"), "name" : "王五", "age" : 29, "sex" : "女", "desc" : "路人丙" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326a"), "name" : "赵四", "age" : 50, "sex" : "男", "desc" : "气质这一块,把握的是死死的" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326b"), "name" : "刘能", "age" : 52, "sex" : "男", "desc" : "广坤,赵四都不如我" }
+	{ "_id" : ObjectId("5d5204e7d3e99828bf5f326c"), "name" : "广坤", "age" : 51, "sex" : "男", "desc" : "超越陈坤,杨坤,蔡徐坤" }
+
+[console] > db.emps.aggregate([
+		{"$project":{"_id":0,"name":1,"sex":1}},
+		{"$out":"emp_infos"}
+	]);
+	
+	console==>
+	无结果
+
+[console]>db.emp_infos.find();
+	console==>
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb52357"), "name" : "张三", "sex" : "女" }
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb52358"), "name" : "李四", "sex" : "女" }
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb52359"), "name" : "王五", "sex" : "女" }
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb5235a"), "name" : "赵四", "sex" : "男" }
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb5235b"), "name" : "刘能", "sex" : "男" }
+	{ "_id" : ObjectId("5d55e6f7a8634bfb0eb5235c"), "name" : "广坤", "sex" : "男" }
 
 
 
+//固定集合操作
+限制集合的大小,如果超过了这个长度就会把最早的数据移出.然后保存新的数据
 
 
-
-
-
-
+@创建一个固定长度的集合
+[console]> db.createCollection("depts",{"capped":true,"size":1024})
 
 
 
