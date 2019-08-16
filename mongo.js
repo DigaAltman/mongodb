@@ -47,6 +47,12 @@
 @创建集合
 > db.createCollection(collectionName)
 
+@查看集合,和show collections的效果一样的
+> show tables;
+
+@删除集合
+>db.collectionName.drop()
+
 
 /**
  	*******************
@@ -2008,24 +2014,90 @@ $out
 
 
 @创建一个固定长度的集合
-[console]> db.createCollection("depts",{"capped":true,"size":1024})
+[console]> db.createCollection("depts",{"capped":true,"size":1024,"max":5});
+//capped:true表示固定长度.size:1024表示集合占用的空间容量(字节),max:5表示最多5条记录
+
+@现在插入5条记录
+[console]> db.depts.insert([
+		{"deptno":10,"dname":"财务部-A","loc":"北京"},
+		{"deptno":11,"dname":"财务部-B","loc":"北京"},
+		{"deptno":12,"dname":"财务部-C","loc":"北京"},
+		{"deptno":13,"dname":"财务部-D","loc":"北京"},
+		{"deptno":14,"dname":"财务部-E","loc":"北京"}
+	]);
+
+	console==>
+	BulkWriteResult({
+		"writeErrors" : [ ],
+		"writeConcernErrors" : [ ],
+		"nInserted" : 5,
+		"nUpserted" : 0,
+		"nMatched" : 0,
+		"nModified" : 0,
+		"nRemoved" : 0,
+		"upserted" : [ ]
+	})
+
+//现在这个集合已经满了,现在我在往里面插入一条数据.那么按照预期结果来说.此时
+//这条记录会覆盖掉"财务部-A"的记录,对吗?
+@再次插入1条数据
+[console]> db.depts.insert([
+		{"deptno":15,"dname":"财务部-F","loc":"北京"}
+	]);
+
+	console==>
+	省略输出结果
+
+//查看集合
+[console]> db.depts.find();
+	console==>
+	{ "_id" : ObjectId("5d55f5ab45c80a1bc74f961e"), "deptno" : 11, "dname" : "财务部-B", "loc" : "北京" }
+	{ "_id" : ObjectId("5d55f5ab45c80a1bc74f961f"), "deptno" : 12, "dname" : "财务部-C", "loc" : "北京" }
+	{ "_id" : ObjectId("5d55f5ab45c80a1bc74f9620"), "deptno" : 13, "dname" : "财务部-D", "loc" : "北京" }
+	{ "_id" : ObjectId("5d55f5ab45c80a1bc74f9621"), "deptno" : 14, "dname" : "财务部-E", "loc" : "北京" }
+	{ "_id" : ObjectId("5d55f5b345c80a1bc74f9622"), "deptno" : 15, "dname" : "财务部-F", "loc" : "北京" }
 
 
+/*
+	************
+	**用户管理**
+	************
+*/
+MongoDB默认连接是不需要密码的.因为如果要开启密码验证必须满足2个条件:
+	条件1:服务器启动的时候开启授权验证
+	条件2:需要配置用户名和密码
 
+	但是需要明确的是,如果想要配置用户名和密码一定是针对于一个数据库的,例如现在的tmt用户,那么就首先
+	切换到tmt数据库上。
 
+[console]> use tmt;
 
+@创建用户,注意任何用户都必须有一个操作角色,最基础的角色就是:read,write
+[console]> db.createUser({
+		"user":"tmt",  						//用户名称
+		"pwd":"1234",							//密码
+		"roles":[								//角色
+			{			
+				"role":"readWrite",	//读写
+				"db":"tmt"						//操作数据库
+			}
+		]
+	});
+	
+	//db.createUser({"user":"tmt","pwd":"1234","roles":[{"role":"readWrite","db":"tmt"}]});
 
+	console==>
+	Successfully added user: {
+		"user" : "tmt",
+		"roles" : [
+			{
+				"role" : "readWrite",
+				"db" : "tmt"
+			}
+		]
+	}
 
-
-
-
-
-
-
-
-
-
-
+//此时,必须配置授权.否则用户名无效.也就是说我们需要在MongoDB的mongo.conf中配置授权
 
 
 
